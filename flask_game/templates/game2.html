@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>王者联盟</title>
+</head>
+<body>
+    <style>
+.progress-bar {
+  width: 200px;
+  height: 20px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 auto; /* 将进度条居中 */
+}
+
+.progress {
+  width: 0%;
+  height: 100%;
+  background-color: #4caf50;
+  transition: width 0.5s ease-in-out;
+}
+
+    </style>
+    <!-- <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}"> -->
+    
+    <script src="{{ url_for('static', filename='js/matter.js') }}"></script>
+
+    <!-- "{{ url_for('static', filename='img2_resourve/shut.mp3') }} " -->
+
+    <audio id="jump-sound" src="{{ url_for('static', filename='img2_resourve/shut.mp3') }} "></audio>
+    <audio id="R-sound" src="{{ url_for('static', filename='img2_resourve/huandan.mp3') }} "></audio>
+    <div class="dropdown">
+        <!-- <img src="{{ url_for('static', filename='img2_resourve/caidan.png') }}" alt="菜单图标"> -->
+        <div class="dropdown-content">
+          <ul>
+            <!-- <button id="button1" ><img src="{{ url_for('static', filename='img2_resourve/fanhui.png') }}"> 返回</button>
+            <button id="button1" onclick="shuaxin()"><img src="{{ url_for('static', filename='img2_resourve/shuaxin.png') }}"> 刷新</button> -->
+          </ul>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress"></div>
+      </div>
+      <div id="render-box"></div>
+    <script>
+
+        function shuaxin() {
+            location.reload();
+        }        
+        // 创建matter.js引擎
+        var Engine = Matter.Engine,
+            Render = Matter.Render,
+            World = Matter.World,
+            Bodies = Matter.Bodies,
+            Body = Matter.Body,
+            Events = Matter.Events
+
+        var engine = Engine.create();
+
+        // 创建一个渲染器
+
+        var render = Render.create({
+            element: document.getElementById('render-box'),
+            engine: engine,
+            options: {
+                width:1000, // 替换为指定方框区域的宽度
+                height: 600, // 替换为指定方框区域的高度
+                wireframes: false,
+                background: '#f0f0f0', 
+                showCollisions: false,
+                hasBounds: true,
+                constraints: false, // 取消约束的渲染效果
+            }
+        });
+
+        // ... ... ... 调整渲染器的位置
+        render.canvas.style.position = 'absolute'; // 设置渲染器的定位方式为绝对定位
+        render.canvas.style.left = '50%'; // 将渲染器的左边距设置为50%
+        render.canvas.style.top = '50%'; // 将渲染器的上边距设置为50%
+        render.canvas.style.transform = 'translate(-50%, -50%)'; // 使用transform属性将渲染器居中
+
+        // 创建地面和墙体
+        var ground = Bodies.rectangle(400, 600, 1000, 40, { isStatic: true });
+        var ground2 = Bodies.rectangle(600+1300, 600, 1000, 40, { isStatic: true });
+
+        const player = Bodies.rectangle(400, 300, 90, 80, {
+        label: 'player',
+        inertia: Infinity, // 设置惯性为无穷大
+        render: {
+            sprite: {
+            texture: "{{ url_for('static', filename='img2_resourve/liubeir.png') }} ",
+            xScale:0.25,
+            yScale:0.25,
+            },
+        },
+        });
+        player.frictionAir = 0.04; // 空气摩擦力
+        player.restitution = 0.2;
+
+        // 创建"paodan.png"图片物体
+        const paodan1 = Bodies.circle(player.position.x-30, player.position.y - 100, 25, {
+            label: 'paodan',
+            isStatic: false, // 设置为不可碰撞
+            isSensor:true,
+            render: {
+                sprite: {
+                    texture: "{{ url_for('static', filename='img2_resourve/paodan.png') }}",
+                    xScale:0.15,
+                    yScale:0.10,
+                },
+            },
+        });
+        const paodan2 = Bodies.circle(player.position.x+30, player.position.y - 100, 25, {
+            label: 'paodan',
+            isStatic: false, // 设置为不可碰撞
+            isSensor:true,
+            render: {
+                sprite: {
+                    texture: "{{ url_for('static', filename='img2_resourve/paodan.png') }}",
+                    xScale:0.15,
+                    yScale:0.10,
+                },
+            },
+        });
+        const monkey = Bodies.rectangle(1500, 300, 150, 150, {
+        // inertia: Infinity, // 设置惯性为无穷大
+        render: {
+            sprite: {
+            texture: "{{ url_for('static', filename='img2_resourve/mokey.png') }} ",
+            xScale:0.4,
+            yScale:0.4,
+            },
+        },
+        });
+        // 创建子弹数组
+        var bullets = [];
+
+        // 将所有物体添加到世界中
+        World.add(engine.world, [ground2, ground, player,paodan1,paodan2,monkey]);
+        // ... ... ... ... ... ... ... ... ... 在每一帧更新"paodan"的位置
+
+        // 监听键盘事件
+        var keys = {};
+        var shutdirection='right'
+        var shut_Sound = document.getElementById("jump-sound");
+        var R_Sound = document.getElementById("R-sound");
+        canJump=false
+
+        Events.on(engine, 'beforeUpdate', function() {
+            Body.setPosition(paodan1, { x: player.position.x-30, y: player.position.y - 100 });
+            Body.setPosition(paodan2, { x: player.position.x+30, y: player.position.y - 100 });
+            
+        });
+        var lastShootTime = 0; // 跟踪上次发射子弹的时间
+        var visibleBulletIndex = 0; // 跟踪当前可见的炮弹索引
+        paodan_shuzu=[paodan1,paodan2]
+
+        var bulletCount = 0; // 跟踪已发射的子弹数量
+        continue_time=1200
+        window.addEventListener("keydown", function(e) {
+        if (e.keyCode === 32) {
+                var currentTime = Date.now(); // 获取当前时间
+                if (currentTime - lastShootTime > continue_time) { // 检查距离上次发射的时间是否超过一秒（1000毫秒）
+                    // 更新上次发射子弹的时间
+                    continue_time=1200
+                    lastShootTime = currentTime;
+
+                        // 在玩家位置创建子弹对象
+                        var bullet_right = Bodies.rectangle(player.position.x, player.position.y, 50, 25,{
+                        // inertia: Infinity, // 设置惯性为无穷大
+                        render: {
+                            sprite: {
+                            texture: "{{ url_for('static', filename='img2_resourve/bullet_right.png') }} ",
+                            xScale:0.08,
+                            yScale:-0.08,
+                            },
+                        },
+                        });
+
+                        // 检查是否可以发射子弹
+                        if (bulletCount < 2) {
+                            // ... ... ... 给子弹施加力以使其发射
+                            if (shutdirection == 'right') {
+                            // 在玩家位置创建子弹对象
+                            var bullet_left = Bodies.rectangle(player.position.x, player.position.y, 50, 25,{
+                            // inertia: Infinity, // 设置惯性为无穷大
+                            render: {
+                                sprite: {
+                                texture: "{{ url_for('static', filename='img2_resourve/bullet_left.png') }} ",
+                                xScale:0.08,
+                                yScale:-0.08,
+                                },
+                            },
+                            });
+                            bullets.push(bullet_right); // 将子弹添加到数组中
+                            World.add(engine.world, bullet_right); 
+                                Body.applyForce(bullet_right, bullet_right.position, { x: 0.4, y: -0.001 });
+                                shut_Sound.play(); // 播放声音
+                            }
+                            if (shutdirection == 'left') {
+
+                            // 在玩家位置创建子弹对象
+                            var bullet_left = Bodies.rectangle(player.position.x, player.position.y, 50, 25,{
+                            // inertia: Infinity, // 设置惯性为无穷大
+                            render: {
+                                sprite: {
+                                texture: "{{ url_for('static', filename='img2_resourve/bullet_left.png') }} ",
+                                xScale:0.08,
+                                yScale:-0.08,
+                                },
+                            },
+                            });         
+                            bullets.push(bullet_left); // 将子弹添加到数组中
+                            World.add(engine.world, bullet_left); 
+
+                                Body.applyForce(bullet_left, bullet_left.position, { x: -0.4, y: -0.001 });
+                                shut_Sound.play(); // 播放声音
+                            }
+                        }
+
+                        // ... ... ... 设置当前可见的炮弹为不可见
+                        paodan_shuzu[visibleBulletIndex].render.visible = false;
+                        
+                        // 更新可见炮弹索引
+                        visibleBulletIndex = (visibleBulletIndex + 1) % paodan_shuzu.length;
+                        
+                        // 增加已发射的子弹数量
+                        bulletCount++;
+                        
+                        // 检查是否需要显示换弹进度条
+                        if (bulletCount >= 2) {
+                            continue_time=2500
+                            // ... ... ... 获取进度条元素
+                            var progressBar = document.querySelector('.progress');
+                            
+                            // 延迟500毫秒后将进度条宽度重置为0%
+                            setTimeout(function() {
+                                // 设置进度条宽度为100%
+                                progressBar.style.width = '100%';
+                                // 播放声音
+                                R_Sound.play();
+                            }, 1000);
+
+                            // 延迟500毫秒后将进度条宽度重置为0%
+                            setTimeout(function() {
+                                progressBar.style.width = '0%';
+                                // 显示两个炮弹
+                                paodan_shuzu[0].render.visible = true;
+                                paodan_shuzu[1].render.visible = true;
+                            }, 2500);
+                            
+                            // ... ... 重置已发射的子弹数量
+                            bulletCount = 0;
+                        }
+                }
+            } 
+        });
+
+
+
+        window.addEventListener("keydown", function(e) {
+            keys[e.keyCode] = true;
+        });
+
+        window.addEventListener("keyup", function(e) {
+            keys[e.keyCode] = false;
+        });
+
+
+
+        // 更新玩家对象的位置
+        Events.on(engine, 'beforeUpdate', function() {
+            // 左键 (←)
+            if (keys[37]) {
+                shutdirection='left'                
+                Body.applyForce(player, player.position, { x: -0.04, y: 0 });
+                player.render.sprite.texture  = "{{ url_for('static', filename='img2_resourve/liubeil.png') }} ";
+            }
+            // 右键 (→)
+            if (keys[39]) {
+                shutdirection='right'
+                Body.applyForce(player, player.position, { x: 0.04, y: 0 });
+                player.render.sprite.texture  = "{{ url_for('static', filename='img2_resourve/liubeir.png') }} ";
+            }
+            // 上建 (↑)
+            if (keys[38]&&canJump) {
+                Body.applyForce(player, player.position, { x: 0, y: -0.4 });
+            }
+        });
+
+
+
+            // 添加碰撞事件监听器
+            Events.on(engine, 'collisionStart', function(event) {
+                var pairs = event.pairs;
+                for (var i = 0; i < pairs.length; i++) {
+                    var pair = pairs[i];
+                    // 检查是否有任一物体是玩家
+                    if (pair.bodyA === player || pair.bodyB === player) {
+                        var otherBody = (pair.bodyA === player) ? pair.bodyB : pair.bodyA;
+                        // 检查另一个物体是否位于玩家上方
+                        if ((otherBody === ground2 || otherBody === ground) && player.position.y < otherBody.position.y) {
+                            // 允许玩家跳跃
+                            canJump = true;
+                        }
+                    }
+                }
+            });
+
+            // 添加碰撞结束事件监听器
+            Events.on(engine, 'collisionEnd', function(event) {
+                var pairs = event.pairs;
+                for (var i = 0; i < pairs.length; i++) {
+                    var pair = pairs[i];
+                    // 检查是否有任一物体是玩家
+                    if (pair.bodyA === player || pair.bodyB === player) {
+                        var otherBody = (pair.bodyA === player) ? pair.bodyB : pair.bodyA;
+                        // 检查另一个物体是否位于玩家上方
+                        if ((otherBody === ground2 || otherBody === ground) && player.position.y < otherBody.position.y) {
+                            // 玩家不在上方，禁止跳跃
+                            canJump = false;
+                        }
+                    }
+                }
+            });
+
+        // 每帧更新渲染器
+        Events.on(render, 'afterRender', function() {
+            var playerPosition = player.position;
+            var renderBounds = render.bounds;            
+            // 计算玩家对象在屏幕中的位置
+            var playerScreenPosition = {
+                x: playerPosition.x - renderBounds.min.x,
+                y: playerPosition.y - renderBounds.min.y
+            };
+
+            // 计算屏幕中心点
+            var centerScreenPosition = {
+                x: render.canvas.width / 2,
+                y: render.canvas.height / 2
+            };
+
+            // 计算屏幕移动的偏移量
+            var offset = {
+                x: playerScreenPosition.x - centerScreenPosition.x,
+                y: playerScreenPosition.y - centerScreenPosition.y
+            };
+
+            // 移动屏幕
+            render.bounds.min.x += offset.x;
+            render.bounds.max.x += offset.x;
+            render.bounds.min.y += offset.y;
+            render.bounds.max.y += offset.y;
+        });
+
+        // 运行引擎和渲染器
+        Engine.run(engine);
+        Render.run(render);
+    </script>
+</body>
+</html>

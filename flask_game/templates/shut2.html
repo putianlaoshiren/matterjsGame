@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>简单设2</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <audio id="jump-sound" src="resourve/ak.mp3"></audio>
+    <script src="{{ url_for('static', filename='js/matter.js') }}"></script>
+    <div class="dropdown">
+        <img src="{{ url_for('static', filename='img1_resourve/caidan.png') }}" alt="菜单图标">
+        <div class="dropdown-content">
+          <ul>
+            <button id="button1" ><img src="{{ url_for('static', filename='img1_resourve/fanhui.png') }}"> 返回</button>
+            <button id="button1" onclick="shuaxin()"><img src="{{ url_for('static', filename='img1_resourve/shuaxin.png') }}"> 刷新</button>
+          </ul>
+        </div>
+      </div>
+    <script>
+        document.getElementById("button1").addEventListener("click", function() {
+            window.location.href = "{{ url_for('game1') }}";
+        });
+        function shuaxin() {
+            location.reload();
+        }    
+        // 创建matter.js引擎
+        var Engine = Matter.Engine,
+            Render = Matter.Render,
+            World = Matter.World,
+            Bodies = Matter.Bodies,
+            Body = Matter.Body,
+            Events = Matter.Events
+
+        var engine = Engine.create();
+
+        // 创建一个渲染器
+
+        var render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                wireframes: false,
+                showAngleIndicator: true,
+                showVelocity: true,
+                background: 'transparent',
+                hasBounds: true,
+                bounds: {
+                    min: { x: 0, y: 0 },
+                    max: { x: window.innerWidth, y: window.innerHeight }
+                }
+            }
+        });
+        // 创建地面和墙体
+        var ground = Bodies.rectangle(400, 600, 1000, 40, { isStatic: true });
+        var ground2 = Bodies.rectangle(600+3000, 600, 1000, 40, { isStatic: true });
+        var box = Bodies.rectangle(3200, 300, 100, 100, {
+        render: {
+            sprite: {
+            texture: "{{ url_for('static', filename='img1_resourve/xiongmao.png') }} " // 替换为实际路径和文件名
+            }
+        }
+        });
+
+        // 创建横线
+        var line = Bodies.rectangle(1100, 800, 10000, 5, { isStatic: true });
+
+        // 创建一个空的组合体（composite）
+        const noPhysicsComposite = Matter.Composite.create();
+
+        const player = Bodies.rectangle(400, 300, 80, 90, {
+        label: 'player',
+        inertia: Infinity, // 设置惯性为无穷大
+        render: {
+            sprite: {
+            texture:"{{ url_for('static', filename='img1_resourve/zxy2.png') }} ",
+            yScale:0.85
+            },
+        },
+        });
+        var shuoming = Bodies.rectangle(800, 400, 160, 100, {
+            isStatic:true,
+            isSensor:true,
+            render: {
+                sprite: {
+                texture: "{{ url_for('static', filename='img1_resourve/caozuoshuoming.png') }} " // 替换为实际路径和文件名
+                }
+            }
+        });
+        player.frictionAir = 0.04; // 空气摩擦力
+        player.restitution = 0.2;
+
+        // 将正方形对象添加到无物理性质的组合体中
+        Matter.Composite.add(noPhysicsComposite, player);
+        // 创建子弹数组
+        var bullets = [];
+
+        // 将所有物体添加到世界中
+        World.add(engine.world, [ground2, ground, player,box,line,shuoming]);
+
+        // 监听键盘事件
+        var keys = {};
+        var shutdirection='right'
+        var jumpSound = document.getElementById("jump-sound");
+        canJump=false
+        window.addEventListener("keydown", function(e) {
+            // 空格键
+            if (e.keyCode === 32) {
+                // 在玩家位置创建子弹对象
+                var bullet = Bodies.rectangle(player.position.x, player.position.y, 30,10, { label: 'bullet' });
+                bullets.push(bullet); // 将子弹添加到数组中
+                World.add(engine.world, bullet);
+                // 给子弹施加力以使其发射
+                if(shutdirection=='right'){
+                    Body.applyForce(bullet, bullet.position, { x: 0.06, y: -0.001 });
+                    jumpSound.play();  // 播放声音
+                }
+                if(shutdirection=='left'){
+                    Body.applyForce(bullet, bullet.position, { x: -0.06, y: -0.001 });
+                    jumpSound.play();  // 播放声音
+                }
+            }
+        });
+        
+        window.addEventListener("keydown", function(e) {
+            keys[e.keyCode] = true;
+        });
+
+        window.addEventListener("keyup", function(e) {
+            keys[e.keyCode] = false;
+        });
+        // 更新玩家对象的位置
+        Events.on(engine, 'beforeUpdate', function() {
+            // 左键 (←)
+            if (keys[37]) {
+                shutdirection='left'
+                Body.applyForce(player, player.position, { x: -0.04, y: 0 });
+                player.render.sprite.texture  =  "{{ url_for('static', filename='img1_resourve/zxy2.png') }} ";
+            }
+            // 右键 (→)
+            if (keys[39]) {
+                shutdirection='right'
+                Body.applyForce(player, player.position, { x: 0.04, y: 0 });
+                player.render.sprite.texture  = "{{ url_for('static', filename='img1_resourve/zxy.png') }} ";
+            }
+            // 上建 (↑)
+            if (keys[38]&&canJump) {
+                Body.applyForce(player, player.position, { x: 0, y: -0.4 });
+            }
+        });
+
+        // 添加碰撞事件监听器
+        Matter.Events.on(engine, 'collisionStart', function(event) {
+            var pairs = event.pairs;
+
+            for (var i = 0; i < pairs.length; i++) {
+                var pair = pairs[i];
+
+                // 检查是否有任一物体是玩家
+                if (pair.bodyA === player || pair.bodyB === player) {
+                    var otherBody = (pair.bodyA === player) ? pair.bodyB : pair.bodyA;
+
+                    // 检查另一个物体是否位于玩家上方
+                    if (player.position.y < otherBody.position.y) {
+                        // 允许玩家跳跃
+                        canJump = true;
+                    }
+                }
+            }
+        });
+
+        // 添加碰撞结束事件监听器
+        Events.on(engine, 'collisionEnd', function(event) {
+            var pairs = event.pairs;
+
+            for (var i = 0; i < pairs.length; i++) {
+                var pair = pairs[i];
+
+                // 检查是否有任一物体是玩家
+                if (pair.bodyA === player || pair.bodyB === player) {
+                    var otherBody = (pair.bodyA === player) ? pair.bodyB : pair.bodyA;
+
+                    // 检查另一个物体是否位于玩家上方
+                    if (player.position.y < otherBody.position.y) {
+                        // 玩家不在上方，禁止跳跃
+                        canJump = false;
+                    }
+                }
+            }
+        });
+
+        // 监听输赢事件
+        Matter.Events.on(engine, 'collisionStart', function(event) {
+        var pairs = event.pairs;
+
+        for (var i = 0; i < pairs.length; i++) {
+            var pair = pairs[i];
+            
+            // 当方块碰到横线时，弹出赢了对话框
+            if ((pair.bodyA === box && pair.bodyB === line) || (pair.bodyA === line && pair.bodyB === box)) {
+                var message = "你赢了！点击确定进入下一关，点击取消返回选关界面";
+                var confirmButton = "确认选择";
+                var cancelButton = "取消选择";
+                var response = confirm(message);
+                if (response) {
+                    window.location.href =  "{{ url_for('shut3') }}";
+                } else {
+                    window.location.href = "{{ url_for('game1') }}";
+                }
+            }
+            
+            // 当圆形碰到横线时，弹出输了对话框
+            if ((pair.bodyA === player && pair.bodyB === line) || (pair.bodyA === line && pair.bodyB === player)) {
+                var message = "你输了！点击确定重新开始，点击取消返回选关界面";
+                var confirmButton = "确认选择";
+                var cancelButton = "取消选择";
+                var response = confirm(message);
+                if (response) {
+                    location.reload();
+                } else {
+                    window.location.href = "{{ url_for('game1') }}";
+                }
+            }
+        }
+        });
+
+        // 每帧更新渲染器
+        Events.on(render, 'afterRender', function() {
+            var playerPosition = player.position;
+            var renderBounds = render.bounds;
+            
+            // 计算玩家对象在屏幕中的位置
+            var playerScreenPosition = {
+                x: playerPosition.x - renderBounds.min.x,
+                y: playerPosition.y - renderBounds.min.y
+            };
+
+            // 计算屏幕中心点
+            var centerScreenPosition = {
+                x: render.canvas.width / 2,
+                y: render.canvas.height / 2
+            };
+
+            // 计算屏幕移动的偏移量
+            var offset = {
+                x: playerScreenPosition.x - centerScreenPosition.x,
+                y: playerScreenPosition.y - centerScreenPosition.y
+            };
+
+            // 移动屏幕
+            render.bounds.min.x += offset.x;
+            render.bounds.max.x += offset.x;
+            render.bounds.min.y += offset.y;
+            render.bounds.max.y += offset.y;
+        });
+
+        // 运行引擎和渲染器
+        Engine.run(engine);
+        Render.run(render);
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* 游戏选关界面样式 */
+        body {
+            background-color:bisque;
+            font-family: Arial, sans-serif;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+            color: #333333;
+        }
+        
+        .level-buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .level-button {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            width: 150px;
+            text-align: center;
+            background-color: #4caf50;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .level-button:hover {
+            background-color: #45a049;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 52px; /* 可根据需要调整容器的高度 */
+        }
+
+        .centered-image {
+            width: 50%;
+            height: 50%;;
+        }
+    </style>
+</head>
+<body>
+    <h1>击落熊猫</h1>
+    
+    <div class="level-buttons">
+        <a class="level-button" href="{{ url_for('shut1') }}">关卡1</a>
+        <a class="level-button" href="{{ url_for('shut2') }}">关卡2</a>
+        <a class="level-button" href="{{ url_for('shut3') }}">关卡3</a>
+        <!-- 在此添加更多关卡按钮 -->
+    </div>
+    <div class="container">
+        <img src="{{ url_for('static', filename='img1_resourve/fengmian.png') }}" alt="Image" class="centered-image">
+      </div>
+</body>
+</html>

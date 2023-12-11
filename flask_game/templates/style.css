@@ -1,0 +1,48 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: bisque;
+}
+canvas {
+    background-color: #51d4e2;
+    display: block;
+}
+
+.dropdown {
+    position: absolute;
+    top: 0;
+    right: 20px;
+
+  }
+  
+  .dropdown-content {
+    top: 30px;
+    right: 0.01px;
+    display: none;
+    position: absolute;
+    min-width: 80x;
+    min-height: 120x;
+  }
+  
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+  
+  .dropdown-content a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .dropdown-content img {
+    width: 40px; 
+    height:40px;
+  }
+  img{
+    width: 50px;
+    height: 50px;
+  }
+
+  #button1 {
+    background-color: bisque;
+  }

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>选择游戏</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            text-align: center;
+        }
+        .games-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 将容器分成三列 */
+            justify-items: center; /* 水平居中 */
+            gap: 1px; /* 列之间的间距 */
+            margin-bottom: 20px;
+        }
+        .game {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+        .game img {
+            width: 250px;
+            height: 120px;
+            margin-bottom: 10px;
+        }
+        .game p {
+            text-align: center;
+            margin-top: 1px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>选择游戏</h1>
+
+    <div class="games-container">
+        <div class="game" onclick="startGame(1)">
+            <img src="{{ url_for('static', filename='images/image.jpg') }}" alt="游戏1">
+            <p>射下熊猫</p>
+        </div>
+
+        <div class="game" onclick="startGame(2)">
+            <img src="{{ url_for('static', filename='images/liubeir.png') }}" alt="游戏2">
+            <p>王者联盟</p>
+        </div>
+        <!-- 添加更多的游戏项目 -->
+        
+    </div>
+
+	<script>
+		function startGame(gameId) {
+			if (gameId === 1) {
+				// 跳转到游戏1的页面
+				window.location.href = '/game1';
+			} else if (gameId === 2) {
+				// 跳转到游戏2的页面
+				window.location.href = '/game2';
+			}
+            
+		}
+	</script>
+</body>
+</html>
